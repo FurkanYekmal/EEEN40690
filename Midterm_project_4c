@@ -1,0 +1,178 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "id": "716a43fc",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "The minimum expectation value is: -0.33542099999999997\n",
+      "The value of theta that gives the minimum expectation value is: [0.]\n"
+     ]
+    }
+   ],
+   "source": [
+    "import cirq\n",
+    "import numpy as np\n",
+    "from scipy.optimize import minimize\n",
+    "\n",
+    "# Define the Hamiltonian\n",
+    "c1 = -0.138754\n",
+    "c2 = -0.152989\n",
+    "c3 = +0.164190\n",
+    "c4 = +0.144579\n",
+    "c5 = +0.111373\n",
+    "c6 = +0.146726\n",
+    "c7 = +0.169348\n",
+    "c8 = -0.035353\n",
+    "c9 = +0.035353\n",
+    "\n",
+    "Z = np.array([[1, 0], [0, -1]])\n",
+    "I = np.array([[1, 0], [0, 1]])\n",
+    "\n",
+    "a = np.dot(Z,Z)\n",
+    "a1 = np.dot(a,I)\n",
+    "a2 = np.dot(a1,I)\n",
+    "\n",
+    "b = np.dot(I,I)\n",
+    "b1 = np.dot(b,Z)\n",
+    "b2 = np.dot(b1,Z)\n",
+    "\n",
+    "c = np.dot(Z,I)\n",
+    "c10 = np.dot(c,I)\n",
+    "c12 = np.dot(c10,Z) \n",
+    "\n",
+    "d = np.dot(Z,Z)\n",
+    "d1 = np.dot(d,Z)\n",
+    "d2 = np.dot(d1,Z)\n",
+    "\n",
+    "H = c1*np.kron(np.kron(np.kron(I,I),I),I) + c2*np.kron(np.kron(np.kron(Z,I),I),I) + c3*np.kron(np.kron(np.kron(I,Z),I),I) + c4*np.kron(np.kron(np.kron(I,I),Z),I) + c5*np.kron(np.kron(np.kron(I,I),I),Z) + c6*np.kron(np.kron(np.kron(Z,Z),I),I) + c7*np.kron(np.kron(np.kron(Z,I),Z),I) + c8*np.kron(np.kron(np.kron(Z,I),I),Z) + c9*np.kron(np.kron(np.kron(I,Z),Z),Z)\n",
+    "# Define the wavefunction\n",
+    "def wavefunction(theta):\n",
+    "    # Start with an equal superposition state\n",
+    "    qubits = cirq.LineQubit.range(4)\n",
+    "    circuit = cirq.Circuit()\n",
+    "    \n",
+    "    # Prepare the state cos(θ)|0011⟩ - sin(θ)|1100⟩\n",
+    "    circuit.append(cirq.ry(2*theta).on(qubits[0]))\n",
+    "    circuit.append(cirq.CNOT.on(qubits[0], qubits[1]))\n",
+    "    circuit.append(cirq.X.on(qubits[2]))\n",
+    "    circuit.append(cirq.X.on(qubits[3]))\n",
+    "    \n",
+    "    # Create a simulator\n",
+    "    simulator = cirq.Simulator()\n",
+    "    \n",
+    "    # Simulate the circuit\n",
+    "    result = simulator.simulate(circuit)\n",
+    "    \n",
+    "    return result.final_state_vector\n",
+    "\n",
+    "# Calculate the expectation value of H for the state |ψ(θ)⟩\n",
+    "def expectation(theta):\n",
+    "    psi = wavefunction(theta)\n",
+    "    expectation_value = np.vdot(psi, np.dot(H, psi)).real\n",
+    "    return expectation_value\n",
+    "\n",
+    "# Find the value of theta that minimizes the expectation value\n",
+    "result = minimize(expectation, x0=0.0, bounds=[(0, 2*np.pi)])\n",
+    "\n",
+    "# Print the results\n",
+    "print(\"The minimum expectation value is:\", result.fun)\n",
+    "print(\"The value of theta that gives the minimum expectation value is:\", result.x)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "id": "ec708fb2",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Eigenvectors:\n",
+      "Eigenvector 1: [1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 2: [0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 3: [0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 4: [0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 5: [0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 6: [0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 7: [0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 8: [0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 9: [0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 10: [0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 11: [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]\n",
+      "Eigenvector 12: [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]\n",
+      "Eigenvector 13: [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0.]\n",
+      "Eigenvector 14: [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0.]\n",
+      "Eigenvector 15: [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0.]\n",
+      "Eigenvector 16: [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "\n",
+    "# Assuming H is your Hamiltonian\n",
+    "eigenvalues, eigenvectors = np.linalg.eig(H)\n",
+    "\n",
+    "print(\"Eigenvectors:\")\n",
+    "for i, eigenvector in enumerate(eigenvectors):\n",
+    "    print(f\"Eigenvector {i+1}: {eigenvector}\")\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5bcfda0b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "08c315dc",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a1c67226",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
